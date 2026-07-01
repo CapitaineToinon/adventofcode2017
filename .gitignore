@@ -1,0 +1,9 @@
+.zig-cache/
+.claude/
+zig-out/
+/release/
+/debug/
+/build/
+/build-*/
+/docgen_tmp/
+/src/input
