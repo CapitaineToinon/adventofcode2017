@@ -12,11 +12,6 @@ const ConditionType = enum {
 
 const InstructionType = enum { Inc, Dec };
 
-const Context = struct {
-    registers: std.StringHashMap(i64),
-    max: ?i64,
-};
-
 const Condition = struct {
     type: ConditionType,
     register: []const u8,
