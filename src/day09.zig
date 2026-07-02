@@ -2,8 +2,8 @@ const std = @import("std");
 const print = std.debug.print;
 
 fn solve(input: []const u8) [2]u32 {
-    var index: u32 = 1;
-    return group(input, &index, 1);
+    var index: u32 = 0;
+    return group(input, &index, 0);
 }
 
 fn group(input: []const u8, i: *u32, depth: u32) [2]u32 {
@@ -40,11 +40,11 @@ fn garbage(input: []const u8, i: *u32) u32 {
 
     while (i.* < input.len) {
         switch (input[i.*]) {
-            '!' => i.* += 2,
             '>' => {
                 i.* += 1;
                 break;
             },
+            '!' => i.* += 2,
             else => {
                 i.* += 1;
                 size += 1;
