@@ -5,8 +5,7 @@ local function get_input()
 	local f = assert(io.open("./input/day10", "r"), "failed to open input")
 	local content = tostring(f:read("l"))
 	f:close()
-	local trimmed, _ = content:gsub(" ", "")
-	return trimmed
+	return content
 end
 
 ---@param input string
@@ -145,6 +144,5 @@ end
 
 local input = get_input()
 
-print(input)
 print(part_one(input))
 print(part_two(input, 64))
