@@ -1,4 +1,4 @@
-local N = 256
+local kh = require("knot_hash")
 
 ---@return string
 local function get_input()
@@ -22,99 +22,6 @@ local function parse_input(input)
 	return numbers
 end
 
----@param n number
----@return number[]
-local function create_list(n)
-	---@type number[]
-	local list = {}
-
-	for i = 0, n - 1 do
-		table.insert(list, i)
-	end
-
-	return list
-end
-
----@param input string
----@return number[]
-local function to_ascii(input)
-	---@type number[]
-	local ascii = { input:byte(1, -1) }
-
-	for _, value in ipairs({ 17, 31, 73, 47, 23 }) do
-		table.insert(ascii, value)
-	end
-
-	return ascii
-end
-
----@param list number[]
----@return number[]
-local function clone(list)
-	return { table.unpack(list) }
-end
-
----@param n number
----@param m number
-local function mod(n, m)
-	return ((n - 1) % m) + 1
-end
-
----@param input number[]
----@param source number[]
----@param position number
----@param skip number
----@return number[], number, number
-local function knot_hash(input, source, position, skip)
-	local list = clone(source)
-	local p = position
-	local s = skip
-
-	for _, len in ipairs(input) do
-		local dest = clone(list)
-
-		for i = 0, len - 1 do
-			local from = mod(p + len - i - 1, N)
-			local to = mod(p + i, N)
-			dest[to] = list[from]
-		end
-
-		list = dest
-		p = p + len + s
-		s = s + 1
-	end
-
-	return list, p, s
-end
-
----@param input string
----@return number
-local function part_one(input)
-	local numbers = parse_input(input)
-	local list, _, _ = knot_hash(numbers, create_list(N), 1, 0)
-	return list[1] * list[2]
-end
-
----@param hash number[]
----@return number[]
-local function densify(hash)
-	---@type number[]
-	local dense = {}
-
-	for i = 0, 15 do
-		local from = (16 * i) + 1
-		local to = (from + 16 - 1)
-
-		table.insert(dense, 0)
-
-		for j = from, to do
-			dense[#dense] = dense[#dense] ~ hash[j]
-		end
-	end
-
-	return dense
-end
-
 ---@param list number[]
 ---@return string
 local function to_hex(list)
@@ -128,21 +35,21 @@ local function to_hex(list)
 end
 
 ---@param input string
----@param rounds number
-local function part_two(input, rounds)
-	local ascii = to_ascii(input)
-	local list = create_list(N)
-	local skip = 0
-	local position = 1
+---@return number
+local function part_one(input)
+	local data = kh.create_data()
+	local lengths = parse_input(input)
+	local result, _ = kh.round(data, lengths)
+	return result[1] * result[2]
+end
 
-	for _ = 1, rounds do
-		list, position, skip = knot_hash(ascii, list, position, skip)
-	end
-
-	return to_hex(densify(list))
+---@param input string
+---@return string
+local function part_two(input)
+	return to_hex(kh.hash(input))
 end
 
 local input = get_input()
 
 print(part_one(input))
-print(part_two(input, 64))
+print(part_two(input))
