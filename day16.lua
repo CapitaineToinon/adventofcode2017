@@ -129,7 +129,6 @@ local function dance(program, moves)
 		if move.type == "x" then
 			local a = utils.mod(move.a + program.offset, program.length)
 			local b = utils.mod(move.b + program.offset, program.length)
-
 			swap(program, a, b)
 		end
 
