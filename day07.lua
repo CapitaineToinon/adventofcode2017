@@ -1,12 +1,14 @@
----@alias Properties { weight: number, children: string[] }
----@alias Network { [string]: Properties }
+local utils = require("utils")
+
+---@alias properties { weight: number, children: string[] }
+---@alias network { [string]: properties }
 
 ---@param input string
 ---@return string[]
 local function split(input)
 	local chunks = {}
 
-	for s in input:gmatch("%S+") do
+	for s in utils.split_spaces(input) do
 		table.insert(chunks, s)
 	end
 
@@ -14,13 +16,13 @@ local function split(input)
 end
 
 ---@param line string
----@return string, Properties
+---@return string, properties
 local function parse_node(line)
 	local words = split(line)
 	local name = words[1]
-	local weight = assert(tonumber(words[2]:sub(2, #words[2] - 1)), "impossible to parse number")
+	local weight = utils.tonumber(words[2]:sub(2, #words[2] - 1))
 
-	---@type Properties
+	---@type properties
 	local properties = {
 		weight = weight,
 		children = {},
@@ -34,9 +36,9 @@ local function parse_node(line)
 	return name, properties
 end
 
----@return Network[], number
+---@return network[], number
 local function get_network()
-	---@type Network
+	---@type network
 	local network = {}
 	local size = 0
 
@@ -50,7 +52,7 @@ local function get_network()
 end
 
 ---@param name string
----@param network Network
+---@param network network
 ---@return number
 local function get_depth(name, network)
 	local depth = 1
@@ -63,7 +65,7 @@ local function get_depth(name, network)
 end
 
 ---@param name string
----@param network Network
+---@param network network
 ---@return number
 local function get_weight(name, network)
 	---@type number
@@ -99,7 +101,7 @@ local function ifind_different(list)
 	return nil
 end
 
----@param network Network
+---@param network network
 ---@param size number
 ---@param root string
 ---@param target number|nil
@@ -123,7 +125,8 @@ local function find_unbalanced(network, size, root, target)
 	-- if one of my children's weight is different from
 	-- my other childrens, try to fix it
 	if different_i ~= nil then
-		local next_target = weights[(((different_i + 1) - 1) % #weights) + 1]
+		local j = utils.mod(different_i + 1, #weights)
+		local next_target = weights[j]
 		return find_unbalanced(network, size, me.children[different_i], next_target)
 	end
 
@@ -143,7 +146,7 @@ local function find_unbalanced(network, size, root, target)
 	error("failed to find a node to fix")
 end
 
----@param network Network
+---@param network network
 ---@param size number
 ---@return string
 local function find_root(network, size)

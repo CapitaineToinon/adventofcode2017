@@ -1,3 +1,5 @@
+local utils = require("utils")
+
 ---@alias Layer { depth: number, range: number, period: number, forbidden: number }
 
 ---@param line string
@@ -7,7 +9,7 @@ local function get_layer(line)
 	local numbers = {}
 
 	for word in string.gmatch(line, "%d+") do
-		local number = assert(tonumber(word), "failed to parse int")
+		local number = utils.tonumber(word)
 		table.insert(numbers, number)
 	end
 

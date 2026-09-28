@@ -1,3 +1,5 @@
+local utils = require("utils")
+
 ---@param content string
 ---@param get_j fun (i: number, content: string): number
 ---@return number
@@ -29,9 +31,7 @@ local function part_two(i, content)
 	return (i + #content / 2) % #content
 end
 
-local f = assert(io.open("./input/day01", "r"), "failed to open input")
-local content = f:read("l")
-f:close()
+local input = utils.readline("./input/day01")
 
-print(solve(content, part_one))
-print(solve(content, part_two))
+print(solve(input, part_one))
+print(solve(input, part_two))

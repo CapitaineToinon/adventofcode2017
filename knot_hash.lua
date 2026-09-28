@@ -1,3 +1,4 @@
+local utils = require("utils")
 local N = 256
 local ROUNDS = 64
 
@@ -20,12 +21,6 @@ end
 ---@return number[]
 local function clone(list)
 	return { table.unpack(list) }
-end
-
----@param n number
----@param m number
-local function mod(n, m)
-	return ((n - 1) % m) + 1
 end
 
 ---@param hash number[]
@@ -73,8 +68,8 @@ function M.round(data, lengths, initial_state)
 		local dest = clone(list)
 
 		for i = 0, len - 1 do
-			local from = mod(state.position + len - i - 1, N)
-			local to = mod(state.position + i, N)
+			local from = utils.mod(state.position + len - i - 1, N)
+			local to = utils.mod(state.position + i, N)
 			dest[to] = list[from]
 		end
 

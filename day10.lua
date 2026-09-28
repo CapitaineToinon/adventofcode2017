@@ -1,12 +1,5 @@
 local kh = require("knot_hash")
-
----@return string
-local function get_input()
-	local f = assert(io.open("./input/day10", "r"), "failed to open input")
-	local content = tostring(f:read("l"))
-	f:close()
-	return content
-end
+local utils = require("utils")
 
 ---@param input string
 ---@return number[]
@@ -14,8 +7,8 @@ local function parse_input(input)
 	---@type number[]
 	local numbers = {}
 
-	for word in input:gmatch("([^,]+)") do
-		local value = assert(tonumber(word), "failed to parse int")
+	for word in utils.split_commas(input) do
+		local value = utils.tonumber(word)
 		table.insert(numbers, value)
 	end
 
@@ -49,7 +42,7 @@ local function part_two(input)
 	return to_hex(kh.hash(input))
 end
 
-local input = get_input()
+local input = utils.readline("./input/day10")
 
 print(part_one(input))
 print(part_two(input))

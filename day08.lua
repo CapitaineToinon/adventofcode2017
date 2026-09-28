@@ -1,35 +1,37 @@
----@alias Condition { register: string, cmp: string, value: number }
----@alias Instruction { register: string, action: string, by: number, conditition: Condition }
----@alias Registers { [string]?: number }
+local utils = require("utils")
+
+---@alias condition { register: string, cmp: string, value: number }
+---@alias instruction { register: string, action: string, by: number, conditition: condition }
+---@alias registers { [string]?: number }
 
 ---@param line string
----@return Instruction
+---@return instruction
 local function parse_instruction(line)
 	---@type string[]
 	local words = {}
 
-	for word in line:gmatch("%S+") do
+	for word in utils.split_spaces(line) do
 		table.insert(words, word)
 	end
 
-	---@type Instruction
+	---@type instruction
 	local instruction = {
 		register = words[1],
 		action = words[2],
-		by = assert(tonumber(words[3]), "failed to parse int"),
+		by = utils.tonumber(words[3]),
 		conditition = {
 			register = words[5],
 			cmp = words[6],
-			value = assert(tonumber(words[7]), "failed to parse int"),
+			value = utils.tonumber(words[7]),
 		},
 	}
 
 	return instruction
 end
 
----@return Instruction[]
+---@return instruction[]
 local function get_instructions()
-	---@type Instruction[]
+	---@type instruction[]
 	local instructions = {}
 
 	for line in io.lines("./input/day08", "l") do
@@ -39,7 +41,7 @@ local function get_instructions()
 	return instructions
 end
 
----@param registers Registers
+---@param registers registers
 ---@return number
 local function get_biggest_register(registers)
 	---@type number
@@ -52,8 +54,8 @@ local function get_biggest_register(registers)
 	return max
 end
 
----@param registers Registers
----@param condition Condition
+---@param registers registers
+---@param condition condition
 ---@return boolean
 local function is_true(registers, condition)
 	local actual = registers[condition.register] or 0
@@ -85,19 +87,19 @@ local function is_true(registers, condition)
 	error("invalid condition")
 end
 
----@param registers Registers
----@param instruction Instruction
-local function run_instruction(registers, instruction)
-	if is_true(registers, instruction.conditition) then
-		local actual = registers[instruction.register] or 0
+---@param registers registers
+---@param i instruction
+local function run_instruction(registers, i)
+	if is_true(registers, i.conditition) then
+		local actual = registers[i.register] or 0
 
-		if instruction.action == "inc" then
-			registers[instruction.register] = actual + instruction.by
+		if i.action == "inc" then
+			registers[i.register] = actual + i.by
 			return
 		end
 
-		if instruction.action == "dec" then
-			registers[instruction.register] = actual - instruction.by
+		if i.action == "dec" then
+			registers[i.register] = actual - i.by
 			return
 		end
 
@@ -105,12 +107,12 @@ local function run_instruction(registers, instruction)
 	end
 end
 
----@param instructions Instruction[]
+---@param instructions instruction[]
 ---@return number, number
 local function run_instructions(instructions)
 	local max = math.mininteger
 
-	---@type Registers
+	---@type registers
 	local registers = {}
 
 	for _, instruction in ipairs(instructions) do

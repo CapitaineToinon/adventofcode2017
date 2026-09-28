@@ -1,3 +1,5 @@
+local utils = require("utils")
+
 local MERSENNE = 0x7FFFFFFF
 local MASK = 0xFFFF
 
@@ -8,7 +10,7 @@ local MASK = 0xFFFF
 ---@return number
 local function get_seed(line, generator)
 	local match = assert(line:match("Generator " .. generator .. " starts with (%d+)"), "invalid line")
-	return assert(tonumber(match), "failed to parse seed")
+	return utils.tonumber(match)
 end
 
 ---@return number, number

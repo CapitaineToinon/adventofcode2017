@@ -1,12 +1,5 @@
 local kh = require("knot_hash")
-
----@return string
-local function get_input()
-	local f = assert(io.open("./input/day14", "r"), "failed to open input")
-	local content = tostring(f:read("l"))
-	f:close()
-	return content
-end
+local utils = require("utils")
 
 ---@alias position { x: number, y: number }
 
@@ -76,7 +69,7 @@ local function count_groups(positions)
 	return groups
 end
 
-local input = get_input()
+local input = utils.readline("./input/day14")
 local positions, size = create_grid(input)
 
 print(size)

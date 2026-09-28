@@ -1,3 +1,4 @@
+local utils = require("utils")
 ---@alias Coord { x: number, y: number }
 ---@alias Direction "up" | "right" | "left" | "down"
 ---@alias Delta { dx: number, dy: number }
@@ -169,9 +170,8 @@ local function part_two(position)
 	end
 end
 
-local f = assert(io.open("./input/day03", "r"), "failed to open input")
-local input = assert(tonumber(f:read()), "input must be a number")
-f:close()
+local content = utils.readline("./input/day03")
+local input = utils.tonumber(content)
 
 print(part_one(input))
 print(part_two(input))

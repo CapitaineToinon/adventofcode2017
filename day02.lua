@@ -1,11 +1,15 @@
+local utils = require("utils")
+
 ---Parse a line of numbers
 ---@param line string
 ---@return number[]
 local function split_line(line)
+	---@type number[]
 	local numbers = {}
 
-	for w in line:gmatch("%S+") do
-		table.insert(numbers, tonumber(w))
+	for w in utils.split_spaces(line) do
+		local number = utils.tonumber(w)
+		table.insert(numbers, number)
 	end
 
 	table.sort(numbers)
@@ -15,6 +19,7 @@ end
 
 ---@return number[][]
 local function get_input()
+	---@type number[][]
 	local rows = {}
 
 	for line in io.lines("./input/day02", "l") do

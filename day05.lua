@@ -1,9 +1,11 @@
+local utils = require("utils")
+
 ---@return number[]
 local function get_input()
 	local offsets = {}
 
 	for line in io.lines("./input/day05", "l") do
-		table.insert(offsets, tonumber(line))
+		table.insert(offsets, utils.tonumber(line))
 	end
 
 	return offsets

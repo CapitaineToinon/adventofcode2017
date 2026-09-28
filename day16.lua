@@ -1,39 +1,26 @@
----@class Spin
+local utils = require("utils")
+
+---@class spin
 ---@field type 's'
 ---@field size number
 
----@class Exchange
+---@class exchange
 ---@field type 'x'
 ---@field a number
 ---@field b number
 
----@class Partner
+---@class partner
 ---@field type 'p'
 ---@field a string
 ---@field b string
 
----@alias move Spin|Exchange|Partner
+---@alias move spin|exchange|partner
 
----@param input string
----@return number
-local function parse_int(input)
-	return assert(tonumber(input), "failed to parse int " .. input)
-end
-
----@param i number
----@param base number
----@return number
-local function mod(i, base)
-	return ((i - 1) % base) + 1
-end
-
----@return string
-local function get_input()
-	local f = assert(io.open("./input/day16", "r"), "failed to open input")
-	local content = tostring(f:read("l"))
-	f:close()
-	return content
-end
+---@class program
+---@field offset number
+---@field length number
+---@field c_to_p table<string, number>
+---@field p_to_c table<number, string>
 
 ---@param word string
 ---@return move
@@ -42,10 +29,10 @@ local function parse_move(word)
 	local rest = word:sub(2, #word)
 
 	if type == "s" then
-		---@type Spin
+		---@type spin
 		return {
 			type = "s",
-			size = parse_int(rest),
+			size = utils.tonumber(rest),
 		}
 	end
 
@@ -54,16 +41,16 @@ local function parse_move(word)
 	local b = rest:sub(slash + 1, #rest)
 
 	if type == "x" then
-		---@type Exchange
+		---@type exchange
 		return {
 			type = "x",
-			a = parse_int(a) + 1,
-			b = parse_int(b) + 1,
+			a = utils.tonumber(a) + 1,
+			b = utils.tonumber(b) + 1,
 		}
 	end
 
 	if type == "p" then
-		---@type Partner
+		---@type partner
 		return {
 			type = "p",
 			a = a,
@@ -80,56 +67,87 @@ local function parse_moves(input)
 	---@type move[]
 	local moves = {}
 
-	for word in input:gmatch("([^,]+)") do
+	for word in utils.split_commas(input) do
 		table.insert(moves, parse_move(word))
 	end
 
 	return moves
 end
 
----@param pos_to_char table<number, string>
----@param offset number
----@param len number
+---@param program program
 ---@return string
-local function get_output(pos_to_char, offset, len)
+local function get_output(program)
 	local output = ""
 
-	for i = 1, len do
-		local j = mod(i + offset, len)
-		output = output .. pos_to_char[j]
+	for i = 1, program.length do
+		local j = utils.mod(i + program.offset, program.length)
+		output = output .. program.p_to_c[j]
 	end
 
 	return output
 end
 
----@param program string
+---@param input string
+---@return program
+local function get_program(input)
+	---@type program
+	local program = {
+		offset = 0,
+		length = #input,
+		c_to_p = {},
+		p_to_c = {},
+	}
+
+	for i = 1, #input do
+		program.c_to_p[input:sub(i, i)] = i
+		program.p_to_c[i] = input:sub(i, i)
+	end
+
+	return program
+end
+
+---@param program program
+---@param a number
+---@param b number
+local function swap(program, a, b)
+	local char_a, char_b = program.p_to_c[a], program.p_to_c[b]
+	program.p_to_c[a] = char_b
+	program.p_to_c[b] = char_a
+	program.c_to_p[char_a] = b
+	program.c_to_p[char_b] = a
+end
+
+---@param program program
+---@param moves move[]
+---@return program
+local function dance(program, moves)
+	for _, move in ipairs(moves) do
+		if move.type == "s" then
+			program.offset = utils.mod(program.offset - move.size, program.length)
+		end
+
+		if move.type == "x" then
+			local a = utils.mod(move.a + program.offset, program.length)
+			local b = utils.mod(move.b + program.offset, program.length)
+
+			swap(program, a, b)
+		end
+
+		if move.type == "p" then
+			local a = program.c_to_p[move.a]
+			local b = program.c_to_p[move.b]
+			swap(program, a, b)
+		end
+	end
+
+	return program
+end
+
+---@param input string
 ---@param moves move[]
 ---@param count? number
-local function dance(program, moves, count)
-	local len = #program
-
-	---@type table<string, number>
-	local char_to_pos = {}
-	---@type table<number, string>
-	local pos_to_char = {}
-
-	for i = 1, #program do
-		char_to_pos[program:sub(i, i)] = i
-		pos_to_char[i] = program:sub(i, i)
-	end
-
-	local offset = 0
-
-	---@param a number
-	---@param b number
-	local function swap(a, b)
-		local char_a, char_b = pos_to_char[a], pos_to_char[b]
-		pos_to_char[a] = char_b
-		pos_to_char[b] = char_a
-		char_to_pos[char_a] = b
-		char_to_pos[char_b] = a
-	end
-
+local function dance_loop(input, moves, count)
+	local program = get_program(input)
 	local loop = 1
 	local loops = count or 1
 
@@ -139,27 +157,13 @@ local function dance(program, moves, count)
 	local step_to_state = {}
 
 	while loop <= loops do
-		for _, move in ipairs(moves) do
-			if move.type == "s" then
-				offset = mod(offset - move.size, len)
-			end
+		program = dance(program, moves)
+		local output = get_output(program)
 
-			if move.type == "x" then
-				local a, b = mod(move.a + offset, len), mod(move.b + offset, len)
-				swap(a, b)
-			end
-
-			if move.type == "p" then
-				local a, b = char_to_pos[move.a], char_to_pos[move.b]
-				swap(a, b)
-			end
-		end
-
-		local output = get_output(pos_to_char, offset, len)
-		local cache = state_to_step[output]
-
-		if cache ~= nil and cache ~= loop then
-			local loop_size = loop - cache
+		if state_to_step[output] ~= nil then
+			-- found a loop, meaning the last element
+			-- has already been computed
+			local loop_size = loop - state_to_step[output]
 			return step_to_state[loops % loop_size]
 		end
 
@@ -172,11 +176,19 @@ local function dance(program, moves, count)
 	return step_to_state[loop - 1]
 end
 
-local input = get_input()
+---@param input string
+---@param moves move[]
+---@return string
+local function dance_once(input, moves)
+	local program = get_program(input)
+	return get_output(dance(program, moves))
+end
+
+local input = utils.readline("./input/day16")
 local moves = parse_moves(input)
 
-local part_one = dance("abcdefghijklmnop", moves)
+local part_one = dance_once("abcdefghijklmnop", moves)
 print(part_one)
 
-local part_two = dance("abcdefghijklmnop", moves, 1000000000)
+local part_two = dance_loop("abcdefghijklmnop", moves, 1000000000)
 print(part_two)

@@ -1,13 +1,12 @@
+local utils = require("utils")
+
 ---@return number[]
 local function get_input()
-	local f = assert(io.open("./input/day06", "r"), "failed to open input")
-	local content = f:read("l")
-	f:close()
-
+	local content = utils.readline("./input/day06")
 	local banks = {}
 
-	for word in content:gmatch("%S+") do
-		table.insert(banks, tonumber(word))
+	for word in utils.split_spaces(content) do
+		table.insert(banks, utils.tonumber(word))
 	end
 
 	return banks
@@ -43,7 +42,7 @@ local function redistribute(banks)
 	banks[i] = 0
 
 	while bank > 0 do
-		local jj = ((j - 1) % #banks) + 1
+		local jj = utils.mod(j, #banks)
 		banks[jj] = banks[jj] + 1
 		bank = bank - 1
 		j = j + 1

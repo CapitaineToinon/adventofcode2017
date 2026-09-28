@@ -1,3 +1,5 @@
+local utils = require("utils")
+
 ---@return string[][]
 local function get_input()
 	local passphrases = {}
@@ -5,7 +7,7 @@ local function get_input()
 	for line in io.lines("./input/day04", "l") do
 		local passphrase = {}
 
-		for word in line:gmatch("%S+") do
+		for word in utils.split_spaces(line) do
 			table.insert(passphrase, word)
 		end
 

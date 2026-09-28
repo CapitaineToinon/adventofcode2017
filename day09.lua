@@ -1,17 +1,11 @@
----@alias Group { score: number, length: number, garbage: number }
----@alias Garbage { length: number, count: number }
+local utils = require("utils")
 
----@return string
-local function get_input()
-	local f = assert(io.open("./input/day09", "r"), "failed to open input")
-	local content = f:read("l")
-	f:close()
-	return content
-end
+---@alias group { score: number, length: number, garbage: number }
+---@alias garbage { length: number, count: number }
 
 ---@param input string
 ---@param start number
----@return Garbage
+---@return garbage
 local function parse_garbage(input, start)
 	local i = start + 1
 	local count = 0
@@ -34,7 +28,7 @@ end
 ---@param input string
 ---@param start number
 ---@param depth number
----@return Group
+---@return group
 local function parse_group(input, start, depth)
 	local i = start + 1
 	local score = depth
@@ -64,7 +58,7 @@ local function parse_group(input, start, depth)
 	end
 end
 
-local input = get_input()
+local input = utils.readline("./input/day09")
 local group = parse_group(input, 1, 1)
 
 print(group.score)

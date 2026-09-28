@@ -1,3 +1,5 @@
+local utils = require("utils")
+
 ---@param line string
 ---@return number[]
 local function get_nodes(line)
@@ -5,7 +7,7 @@ local function get_nodes(line)
 	local numbers = {}
 
 	for word in string.gmatch(line, "%d+") do
-		local number = assert(tonumber(word), "failed to parse int")
+		local number = utils.tonumber(word)
 		table.insert(numbers, number)
 	end
 

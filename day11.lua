@@ -1,18 +1,18 @@
 --- Should out to this fucking amazing article
 --- https://www.redblobgames.com/grids/hexagons/
 
+local utils = require("utils")
+
 ---@alias direction "n" | "ne" | "nw" | "s" | "se" | "sw"
 
 ---@return direction[]
 local function get_input()
-	local f = assert(io.open("./input/day11", "r"), "failed to read input")
-	local content = tostring(f:read("l"))
-	f:close()
+	local content = utils.readline("./input/day11")
 
 	---@type direction[]
 	local dirs = {}
 
-	for d in content:gmatch("([^,]+)") do
+	for d in utils.split_commas(content) do
 		table.insert(dirs, d)
 	end
 
@@ -22,6 +22,7 @@ end
 ---@param q number
 ---@param r number
 ---@param s number
+---@return number
 local function distance(q, r, s)
 	return (math.abs(q) + math.abs(r) + math.abs(s)) // 2
 end
