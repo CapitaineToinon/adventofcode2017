@@ -4,7 +4,8 @@ local M = {}
 ---@param input string
 ---@return number
 function M.tonumber(input)
-	return assert(tonumber(input), "failed to parse number " .. input)
+	local v, _ = assert(tonumber(input), "failed to parse number " .. input)
+	return v
 end
 
 ---Does 1 to base modulo instead of 0 to base - 1
