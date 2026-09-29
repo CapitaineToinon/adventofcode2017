@@ -26,6 +26,14 @@ function M.readline(filename)
 	return content
 end
 
+---Split on sparator
+---@param input string
+---@param separator string
+---@return fun(): string, ...
+function M.split(input, separator)
+	return input:gmatch("([^" .. separator .. "]+)")
+end
+
 ---Split on spaces
 ---@param input string
 ---@return fun(): string, ...
@@ -37,7 +45,7 @@ end
 ---@param input string
 ---@return fun(): string, ...
 function M.split_commas(input)
-	return input:gmatch("([^,]+)")
+	return M.split(input, ",")
 end
 
 return M
