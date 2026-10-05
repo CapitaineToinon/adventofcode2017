@@ -5,6 +5,18 @@ local function strip(grid)
 	return stripped
 end
 
+---@param size number
+---@return string
+local function create_grid(size)
+	local output = ""
+
+	for i = 1, (size * size) do
+		output = output .. i
+	end
+
+	return output
+end
+
 local function get_rules()
 	---@type table<string, string>
 	local rules = {}
@@ -187,9 +199,16 @@ local function process(grid, rules, steps)
 	return output
 end
 
-local rules = get_rules()
-local all_rules = expand_rules(rules)
+-- local rules = get_rules()
+-- local all_rules = expand_rules(rules)
+-- local processed = process(".#...####", all_rules, 2)
 
-local processed = process(".#...####", all_rules, 2)
+local grid = create_grid(4)
 
-p(processed)
+p(grid)
+
+local quad = split(grid)
+
+for _, q in ipairs(quad) do
+	p(q)
+end
