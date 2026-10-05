@@ -26,6 +26,20 @@ function M.readline(filename)
 	return content
 end
 
+---Reads the lines skipping the end of line
+---@param filename string
+---@return string[]
+function M.readlines(filename)
+	---@type string[]
+	local lines = {}
+
+	for line in io.lines(filename, "l") do
+		table.insert(lines, line)
+	end
+
+	return lines
+end
+
 ---Split on sparator
 ---@param input string
 ---@param separator string
