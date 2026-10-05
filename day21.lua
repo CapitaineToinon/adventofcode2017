@@ -14,32 +14,15 @@ local function count_on(grid)
 	return count
 end
 
-local function get_rules()
-	---@type table<string, string>
-	local rules = {}
-
-	for line in io.lines("./input/day21", "l") do
-		local i, j = string.find(line, " => ")
-		local key = string.sub(line, 1, i - 1)
-		local value = string.sub(line, j + 1, string.len(line))
-		rules[strip(key)] = strip(value)
-	end
-
-	return rules
-end
-
 ---@param number number
 ---@return integer
 local function get_root(number)
-	local root = math.floor(math.sqrt(number))
-	assert(root * root == number, "number does not have a whole root: " .. number)
-	assert(root > 1, "should not be possible to have a root of " .. root .. " caused by number " .. number)
-	return root
+	return math.floor(math.sqrt(number))
 end
 
+---@param size number
+---@return number
 local function get_split_size(size)
-	assert(size >= 4, "should not be able to split a grid of size " .. size)
-
 	if size % 2 == 0 then
 		return 2
 	end
@@ -52,22 +35,10 @@ local function get_split_size(size)
 end
 
 ---@param grid string
-local function p(grid)
-	local size = get_root(#grid)
-
-	for y = 0, size - 1 do
-		print(grid:sub(size * y + 1, size * y + size))
-	end
-end
-
----@param grid string
 ---@return string[]
 local function split(grid)
 	local size = get_root(#grid)
 	local chunk_size = get_split_size(size)
-
-	print("trying to divide in chunks of size " .. chunk_size)
-
 	local chunks = {}
 
 	for j = 0, (size // chunk_size) - 1 do
@@ -83,8 +54,6 @@ local function split(grid)
 			table.insert(chunks, chunk)
 		end
 	end
-
-	assert(#chunks > 0, "created empty chunks, not possible")
 
 	return chunks
 end
@@ -116,11 +85,6 @@ end
 ---@return string
 local function rotate(grid, size, times)
 	local t = times % 4
-
-	if t == 0 then
-		return grid
-	end
-
 	local a = grid
 	local b = ""
 
@@ -164,7 +128,7 @@ end
 
 ---@param rules table<string, string>
 ---@return table<string, string>
-local function expand_rules(rules)
+local function expand_rules_with_transformations(rules)
 	---@type table<string, string>
 	local expanded = {}
 
@@ -193,59 +157,86 @@ local function expand_rules(rules)
 	return expanded
 end
 
----@type table<string, number>
-local cache = {}
+---@return table<string, string>
+local function get_rules()
+	---@type table<string, string>
+	local rules = {}
 
-local function r(grid, rules, steps)
-	if steps == 0 then
-		return count_on(grid)
+	for line in io.lines("./input/day21", "l") do
+		local i, j = string.find(line, " => ")
+		local key = string.sub(line, 1, i - 1)
+		local value = string.sub(line, j + 1, string.len(line))
+		rules[strip(key)] = strip(value)
 	end
 
-	if rules[grid] ~= nil then
-		return r(rules[grid], rules, steps - 1)
+	return expand_rules_with_transformations(rules)
+end
+
+---@param rules table<string, string>
+---@return table<string, string[]>
+local function create_graph(rules)
+	---@type table<string, string[]>
+	local edges = {}
+
+	for from, to in pairs(rules) do
+		if rules[to] == nil then
+			-- we need to split and replace the next
+			-- pattern to create the graph for rules
+			local chunks = split(to)
+
+			for i, c in ipairs(split(to)) do
+				chunks[i] = rules[c] or error("failed to replace chunk")
+			end
+
+			local next = join(chunks)
+			-- this counts as two itterations so update both
+			-- next and next's next
+			edges[from] = { next }
+			edges[next] = {}
+
+			for _, n in ipairs(split(next)) do
+				table.insert(edges[next], n)
+			end
+		else
+			-- There is a one to one replacement rule
+			edges[from] = { to }
+		end
+	end
+
+	return edges
+end
+
+---@param grid string
+---@param edges table<string, string[]>
+---@param steps number
+---@return number
+local function process(grid, edges, steps)
+	---@type table<string, number>
+	local counts = { [grid] = 1 }
+
+	for _ = 1, steps do
+		local next = {}
+
+		for node, freq in pairs(counts) do
+			for _, n in ipairs(edges[node]) do
+				next[n] = (next[n] or 0) + freq
+			end
+		end
+
+		counts = next
 	end
 
 	local total = 0
-	local chunks = split(grid)
 
-	for _, c in ipairs(chunks) do
-		total = total + r(rules[c], rules, steps - 1)
+	for node, freq in pairs(counts) do
+		total = total + count_on(node) * freq
 	end
 
 	return total
 end
 
-local function process(grid, rules, steps)
-	local output = grid
-
-	for step = 1, steps do
-		print(step)
-		local next = rules[output]
-
-		if next == nil then
-			local chunk = split(output)
-
-			for i, q in ipairs(chunk) do
-				chunk[i] = rules[q]
-
-				if chunk[i] == nil then
-					error("failed to replace pattern, no match for " .. q)
-				end
-			end
-
-			next = join(chunk)
-		end
-
-		output = next
-	end
-
-	return output
-end
-
 local rules = get_rules()
-local all_rules = expand_rules(rules)
-print(r(STARTING_GRID, all_rules, 5))
--- local processed = process(STARTING_GRID, all_rules, 18)
---
--- p(processed)
--- print(count_on(processed))
+local edges = create_graph(rules)
+
+print(process(STARTING_GRID, edges, 5))
+print(process(STARTING_GRID, edges, 18))
