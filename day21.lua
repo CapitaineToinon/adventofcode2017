@@ -1,3 +1,5 @@
+local STARTING_GRID = ".#...####"
+
 ---@param grid string
 ---@return string
 local function strip(grid)
@@ -5,16 +7,11 @@ local function strip(grid)
 	return stripped
 end
 
----@param size number
----@return string
-local function create_grid(size)
-	local output = ""
-
-	for i = 1, (size * size) do
-		output = output .. i
-	end
-
-	return output
+---@param grid string
+---@return number
+local function count_on(grid)
+	local _, count = grid:gsub("#", "")
+	return count
 end
 
 local function get_rules()
@@ -31,21 +28,32 @@ local function get_rules()
 	return rules
 end
 
-local function get_size(grid)
-	if #grid == 4 then
+---@param number number
+---@return integer
+local function get_root(number)
+	local root = math.floor(math.sqrt(number))
+	assert(root * root == number, "number does not have a whole root: " .. number)
+	assert(root > 1, "should not be possible to have a root of " .. root .. " caused by number " .. number)
+	return root
+end
+
+local function get_split_size(size)
+	assert(size >= 4, "should not be able to split a grid of size " .. size)
+
+	if size % 2 == 0 then
 		return 2
-	elseif #grid == 9 then
-		return 3
-	elseif #grid == 16 then
-		return 4
-	else
-		error("invalid grid size of " .. #grid)
 	end
+
+	if size % 3 == 0 then
+		return 3
+	end
+
+	error("impossible to divide grid in sub grids")
 end
 
 ---@param grid string
 local function p(grid)
-	local size = get_size(grid)
+	local size = get_root(#grid)
 
 	for y = 0, size - 1 do
 		print(grid:sub(size * y + 1, size * y + size))
@@ -55,45 +63,47 @@ end
 ---@param grid string
 ---@return string[]
 local function split(grid)
-	local size = get_size(grid)
+	local size = get_root(#grid)
+	local chunk_size = get_split_size(size)
 
-	assert(size == 4, "Can only split grids of 4 by 4")
+	print("trying to divide in chunks of size " .. chunk_size)
 
-	local quadrants = {}
+	local chunks = {}
 
-	for j = 0, 1 do
-		for i = 0, 1 do
-			local quad = ""
-			local from = (size * (size // 2) * j) + i * (size // 2) + 1
+	for j = 0, (size // chunk_size) - 1 do
+		for i = 0, (size // chunk_size) - 1 do
+			local chunk = ""
+			local from = (size * chunk_size * j) + i * chunk_size + 1
 
-			for k = 0, 1 do
-				local line = grid:sub((size * k) + from, (size * k) + from + (size // 2) - 1)
-				quad = quad .. line
+			for k = 0, chunk_size - 1 do
+				local line = grid:sub(from + (size * k), from + (size * k) + chunk_size - 1)
+				chunk = chunk .. line
 			end
 
-			table.insert(quadrants, quad)
+			table.insert(chunks, chunk)
 		end
 	end
 
-	return quadrants
+	assert(#chunks > 0, "created empty chunks, not possible")
+
+	return chunks
 end
 
----Joins quadrants, assuming order is top-left, top-right, bottom-left, bottom-right
----@param quad string[]
+---@param chunks string[]
 ---@return string
-local function join(quad)
-	assert(#quad == 4, "there must be 4 quadrants")
-
+local function join(chunks)
 	local output = ""
+	local size = get_root(#chunks)
 
-	-- assume quadrants are all the same size
-	local size = get_size(quad[1])
+	-- assume chunks are all the same size
+	local chunk_size = get_root(#chunks[1])
 
-	for j = 0, size * 2 - 1 do
-		for col = 0, 1 do
-			local k = ((j // size) * size) + col + 1
-			local y = j % size
-			output = output .. quad[k]:sub((size * y) + 1, (size * y) + size)
+	for row = 0, size - 1 do
+		for y = 0, chunk_size - 1 do
+			for col = 0, size - 1 do
+				local k = 1 + (row * size) + col
+				output = output .. chunks[k]:sub((chunk_size * y) + 1, (chunk_size * y) + chunk_size)
+			end
 		end
 	end
 
@@ -106,6 +116,11 @@ end
 ---@return string
 local function rotate(grid, size, times)
 	local t = times % 4
+
+	if t == 0 then
+		return grid
+	end
+
 	local a = grid
 	local b = ""
 
@@ -113,7 +128,6 @@ local function rotate(grid, size, times)
 		for i = 0, size - 1 do
 			for j = 0, size - 1 do
 				local at = size * (size - 1 - j) + i + 1
-				print(a, b, at)
 				b = b .. a:sub(at, at)
 			end
 		end
@@ -130,11 +144,11 @@ end
 ---@param axis "horizontal" | "vertical"
 ---@return string
 local function flip(grid, size, axis)
-	local output = grid
-
 	if axis == "vertical" then
-		output = rotate(output, size, 1)
+		grid = rotate(grid, size, 1)
 	end
+
+	local output = ""
 
 	for j = 0, size - 1 do
 		local at = size * (size - 1 - j) + 1
@@ -155,7 +169,7 @@ local function expand_rules(rules)
 	local expanded = {}
 
 	for grid, next in pairs(rules) do
-		local size = get_size(grid)
+		local size = get_root(#grid)
 
 		for _, axis in ipairs({ false, "vertical", "horizontal" }) do
 			for i = 0, 3 do
@@ -169,7 +183,9 @@ local function expand_rules(rules)
 					key = rotate(key, size, i)
 				end
 
-				expanded[key] = next
+				if expanded[key] == nil then
+					expanded[key] = next
+				end
 			end
 		end
 	end
@@ -177,20 +193,47 @@ local function expand_rules(rules)
 	return expanded
 end
 
+---@type table<string, number>
+local cache = {}
+
+local function r(grid, rules, steps)
+	if steps == 0 then
+		return count_on(grid)
+	end
+
+	if rules[grid] ~= nil then
+		return r(rules[grid], rules, steps - 1)
+	end
+
+	local total = 0
+	local chunks = split(grid)
+
+	for _, c in ipairs(chunks) do
+		total = total + r(rules[c], rules, steps - 1)
+	end
+
+	return total
+end
+
 local function process(grid, rules, steps)
 	local output = grid
 
-	for _ = 1, steps do
+	for step = 1, steps do
+		print(step)
 		local next = rules[output]
 
 		if next == nil then
-			local quad = split(grid)
+			local chunk = split(output)
 
-			for i, q in ipairs(quad) do
-				quad[i] = rules[q]
+			for i, q in ipairs(chunk) do
+				chunk[i] = rules[q]
+
+				if chunk[i] == nil then
+					error("failed to replace pattern, no match for " .. q)
+				end
 			end
 
-			next = rules[join(quad)]
+			next = join(chunk)
 		end
 
 		output = next
@@ -199,16 +242,10 @@ local function process(grid, rules, steps)
 	return output
 end
 
--- local rules = get_rules()
--- local all_rules = expand_rules(rules)
--- local processed = process(".#...####", all_rules, 2)
-
-local grid = create_grid(4)
-
-p(grid)
-
-local quad = split(grid)
-
-for _, q in ipairs(quad) do
-	p(q)
-end
+local rules = get_rules()
+local all_rules = expand_rules(rules)
+print(r(STARTING_GRID, all_rules, 5))
+-- local processed = process(STARTING_GRID, all_rules, 18)
+--
+-- p(processed)
+-- print(count_on(processed))
