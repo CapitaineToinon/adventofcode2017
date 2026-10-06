@@ -20,10 +20,7 @@ end
 ---@return number
 ---@return number
 local function turn_left(dx, dy)
-	local tmp = dx
-	dx = dy
-	dy = -tmp
-	return dx, dy
+	return dy, -dx
 end
 
 ---@param dx number
@@ -31,10 +28,7 @@ end
 ---@return number
 ---@return number
 local function turn_right(dx, dy)
-	local tmp = dx
-	dx = -dy
-	dy = tmp
-	return dx, dy
+	return -dy, dx
 end
 
 ---@param dx number
