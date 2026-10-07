@@ -1,6 +1,7 @@
 local utils = require("utils")
 
 ---@class component
+---@field id number
 ---@field key string
 ---@field left number
 ---@field right number
@@ -8,15 +9,17 @@ local utils = require("utils")
 
 ---@type component
 local root = {
+	id = 1,
 	key = "0/0",
 	left = 0,
 	right = 0,
 	weight = 0,
 }
 
+---@param id number
 ---@param input string
 ---@return component
-local function parse_component(input)
+local function parse_component(id, input)
 	---@type number[]
 	local words = {}
 
@@ -28,6 +31,7 @@ local function parse_component(input)
 
 	---@type component
 	return {
+		id = id,
 		key = input,
 		left = words[1],
 		right = words[2],
@@ -41,7 +45,7 @@ local function get_components()
 	local components = { root }
 
 	for line in io.lines("./input/day24", "l") do
-		table.insert(components, parse_component(line))
+		table.insert(components, parse_component(#components + 1, line))
 	end
 
 	return components
@@ -82,7 +86,7 @@ local function find_best(edges)
 	---@class item
 	---@field node component
 	---@field score number
-	---@field visited table<string, boolean>
+	---@field visited number
 	---@field right number
 	---@field length number
 
@@ -90,7 +94,7 @@ local function find_best(edges)
 	local start = {
 		node = root,
 		score = 0,
-		visited = { [root.key] = true },
+		visited = root.id,
 		right = root.right,
 		length = 0,
 	}
@@ -114,7 +118,9 @@ local function find_best(edges)
 		local stuck = true
 
 		for _, n in ipairs(edges[cur.node.key]) do
-			if not cur.visited[n.key] and (n.left == cur.right or n.right == cur.right) then
+			local visited = (cur.visited >> n.id) & 1 == 1
+
+			if not visited and (n.left == cur.right or n.right == cur.right) then
 				local right = n.right
 
 				if right == cur.right then
@@ -124,14 +130,10 @@ local function find_best(edges)
 				local next = {
 					node = n,
 					score = cur.score + n.weight,
-					visited = { [n.key] = true },
+					visited = cur.visited | (1 << n.id),
 					right = right,
 					length = cur.length + 1,
 				}
-
-				for key, _ in pairs(cur.visited) do
-					next.visited[key] = true
-				end
 
 				table.insert(queue, next)
 				stuck = false
