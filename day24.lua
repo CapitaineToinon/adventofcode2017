@@ -77,22 +77,79 @@ end
 
 ---@param edges table<string, component[]>
 ---@return number
+---@return number
 local function find_best(edges)
-	---@type { node: component, score: number, visited: table<string, boolean> }[]
-	local queue = { { node = root, score = 0, visited = {} } }
+	---@class item
+	---@field node component
+	---@field score number
+	---@field visited table<string, boolean>
+	---@field right number
+	---@field length number
+
+	---@type item
+	local start = {
+		node = root,
+		score = 0,
+		visited = { [root.key] = true },
+		right = root.right,
+		length = 0,
+	}
+
+	---@type item[]
+	local queue = { start }
+
+	---@type item|nil
+	local best = nil
+
+	---@type item|nil
+	local best_longest = nil
 
 	while true do
-		local cur = table.remove(queue, 1)
+		local cur = table.remove(queue)
 
 		if cur == nil then
 			break
 		end
 
+		local stuck = true
+
 		for _, n in ipairs(edges[cur.node.key]) do
-			if not cur.visisted[n.key] then
+			if not cur.visited[n.key] and (n.left == cur.right or n.right == cur.right) then
+				local right = n.right
+
+				if right == cur.right then
+					right = n.left
+				end
+
+				local next = {
+					node = n,
+					score = cur.score + n.weight,
+					visited = { [n.key] = true },
+					right = right,
+					length = cur.length + 1,
+				}
+
+				for key, _ in pairs(cur.visited) do
+					next.visited[key] = true
+				end
+
+				table.insert(queue, next)
+				stuck = false
+			end
+		end
+
+		if stuck then
+			if best == nil or cur.score > best.score then
+				best = cur
+			end
+
+			if best_longest == nil or cur.score > best_longest.score or cur.length > best_longest.length then
+				best_longest = cur
 			end
 		end
 	end
+
+	return best.score, best_longest.score
 end
 
 local components = get_components()
