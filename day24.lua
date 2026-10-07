@@ -82,79 +82,61 @@ end
 ---@param edges table<string, component[]>
 ---@return number
 ---@return number
+---@return number
 local function find_best(edges)
-	---@class item
-	---@field node component
-	---@field score number
-	---@field visited number
-	---@field right number
-	---@field length number
-
-	---@type item
-	local start = {
-		node = root,
-		score = 0,
-		visited = root.id,
-		right = root.right,
-		length = 0,
-	}
-
-	---@type item[]
-	local queue = { start }
-
-	---@type item|nil
-	local best = nil
-
-	---@type item|nil
-	local best_longest = nil
-
-	while true do
-		local cur = table.remove(queue)
-
-		if cur == nil then
-			break
-		end
-
+	---@param node component
+	---@param right number
+	---@param score number
+	---@param length number
+	---@param visited number
+	---@param best_score number
+	---@param best_length number
+	---@param best_length_score number
+	---@return number
+	---@return number
+	---@return number
+	local function recurse(node, right, score, length, visited, best_score, best_length, best_length_score)
 		local stuck = true
 
-		for _, n in ipairs(edges[cur.node.key]) do
-			local visited = (cur.visited >> n.id) & 1 == 1
+		for _, n in ipairs(edges[node.key]) do
+			local can_visit = (visited >> n.id) & 1 == 1
 
-			if not visited and (n.left == cur.right or n.right == cur.right) then
-				local right = n.right
-
-				if right == cur.right then
-					right = n.left
-				end
-
-				local next = {
-					node = n,
-					score = cur.score + n.weight,
-					visited = cur.visited | (1 << n.id),
-					right = right,
-					length = cur.length + 1,
-				}
-
-				table.insert(queue, next)
+			if not can_visit and (n.left == right or n.right == right) then
 				stuck = false
+
+				best_score, best_length, best_length_score = recurse(
+					n,
+					n.right == right and n.left or n.right,
+					score + n.weight,
+					length + 1,
+					visited | (1 << n.id),
+					best_score,
+					best_length,
+					best_length_score
+				)
 			end
 		end
 
 		if stuck then
-			if best == nil or cur.score > best.score then
-				best = cur
+			if score > best_score then
+				best_score = score
 			end
 
-			if best_longest == nil or cur.score > best_longest.score or cur.length > best_longest.length then
-				best_longest = cur
+			if score > best_length_score or length > best_length then
+				best_length = length
+				best_length_score = score
 			end
 		end
+
+		return best_score, best_length, best_length_score
 	end
 
-	return best.score, best_longest.score
+	return recurse(root, root.right, 0, root.id, 0, 0, 0, 0)
 end
 
 local components = get_components()
 local edges = build_graph(components)
+local part_one, _, part_two = find_best(edges)
 
-print(find_best(edges))
+print(part_one)
+print(part_two)
