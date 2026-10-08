@@ -22,8 +22,6 @@ local function parse_particules()
 			table.insert(numbers, utils.tonumber(word))
 		end
 
-		assert(#numbers == 9, "invalid line")
-
 		---@type particule
 		local p = {
 			p = { x = numbers[1], y = numbers[2], z = numbers[3] },
@@ -91,16 +89,22 @@ end
 ---@param destroyed table<number, boolean>
 ---@return boolean
 local function remove_collisions(particules, destroyed)
+	---@type number[]
+	local to_destroy = {}
 	local changed = false
 
 	for i = 1, #particules do
 		for j = i + 1, #particules do
 			if not destroyed[i] and not destroyed[j] and are_same(particules[i].p, particules[j].p) then
-				destroyed[i] = true
-				destroyed[j] = true
+				table.insert(to_destroy, i)
+				table.insert(to_destroy, j)
 				changed = true
 			end
 		end
+	end
+
+	for _, i in ipairs(to_destroy) do
+		destroyed[i] = true
 	end
 
 	return changed
@@ -146,28 +150,27 @@ local function get_closest(particules)
 end
 
 ---@param particules particule[]
----@return number, number
+---@return number
 local function part_one(particules)
 	local confidance = 1000
 	local i = 0
-	local closest, best = get_closest(particules)
+	local closest, _ = get_closest(particules)
 	local destroyed = {}
 
 	while i < confidance do
 		tick(particules, destroyed)
 
-		local closest_j, best_j = get_closest(particules)
+		local closest_j, _ = get_closest(particules)
 
 		if closest_j == closest then
 			i = i + 1
 		else
 			i = 0
 			closest = closest_j
-			best = best_j
 		end
 	end
 
-	return closest - 1, best
+	return closest - 1
 end
 
 ---@param particules particule[]
@@ -187,8 +190,6 @@ local function part_two(particules)
 		else
 			i = 0
 		end
-
-		print(i)
 	end
 
 	local total = 0
@@ -204,8 +205,6 @@ end
 
 local a = parse_particules()
 local b = clone_particules(a)
-
-print(#a)
 
 print(part_one(a))
 print(part_two(b))
